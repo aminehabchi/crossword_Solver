@@ -1,116 +1,137 @@
-const puzzle = `...1...........
-..1000001000...
-...0....0......
-.1......0...1..
-.0....100000000
-100000..0...0..
-.0.....1001000.
-.0.1....0.0....
-.10000000.0....
-.0.0......0....
-.0.0.....100...
-...0......0....
-..........0....`
-const words = [
-  'sun',
-  'sunglasses',
-  'suncream',
-  'swimming',
-  'bikini',
-  'beach',
-  'icecream',
-  'tan',
-  'deckchair',
-  'sand',
-  'seaside',
-  'sandals',
-].reverse()
+const puzzle = '2001\n0..0\n1000\n0..0'
+const words = ['casa', 'alan', 'ciao', 'anta']
 
+
+
+
+let solutions = []
 crosswordSolver(puzzle, words)
 
 function crosswordSolver(ep, words) {
+    if (checker(ep, words)) {
+        console.log('Error')
+        return
+    }
     let emptyPuzzle = ep.split("\n")
-    let epp = []
     for (let i = 0; i < emptyPuzzle.length; i++) {
-        epp.push(stringToBytes(emptyPuzzle[i]))
+        emptyPuzzle[i] = emptyPuzzle[i].split('')
     }
-    let w = []
+    backtrack(emptyPuzzle, emptyPuzzle, words)
+    if (solutions.length != 1) {
+        console.log('Error')
+    } else {
+        console.log(convertToString(solutions[0]))
+    }
+
+}
+function convertToString(o) {
+    for (let i = 0; i < o.length; i++) {
+        o[i] = [o[i].join('')]
+    }
+    return o.join('\n')
+}
+function checker(puzzle, words) {
+    if (puzzle.length == 0 || words.length == 0 || typeof (puzzle) != 'string') {
+        return true
+    }
     for (let i = 0; i < words.length; i++) {
-        w.push(stringToBytes(words[i]))
-    }
-   //console.log(writeVertical(epp, 0, 0, w[0]))
-    let o=backtrack(epp,epp, w)
-    if (o=='Error'){
-        console.log(o)
-    }else{
-        let a=byteArray2DToStringArray(o);
-        for (let i=0;i<a.length;i++){
-            console.log(a[i])
+        if (typeof (words[i]) != 'string') {
+            return true
         }
     }
+    let counter=0
+    for (let i = 0; i < puzzle.length; i++) {
+        if (puzzle[i] != '\n' && puzzle[i] != '0' && puzzle[i] != '1' && puzzle[i] != '2' && puzzle[i] != '.') {
+            return true
+        }
+        if ( puzzle[i] != '.' && puzzle[i] != '\n') {
+            counter+=Number(puzzle[i])
+        }
+    }
+    if (counter!=words.length){
+        return true
+    }
+    let wordsMap = new Map();
+    for (let i = 0; i < words.length; i++) {
+        if (wordsMap.get(words[i]) == undefined)  {
+            wordsMap.set(words[i], true)
+        } else {
+            return true 
+        }
+    }
+    return false
 }
-function byteArray2DToStringArray(byteArray2D) {
-    return byteArray2D.map(byteArray => {
-        return String.fromCharCode(...byteArray);
-    });
+function checkSlolutions(solutions){
+    let regex=/[a-zA-Z\.]/
+    for (let i=0;i<solutions.length;i++){
+        for (let j=0;j<solutions[i].length;j++){
+            if  (!regex.test(solutions[i][j])){
+                return false
+            }
+        }
+    }
+    return true
 }
-function stringToBytes(str) {
-    const encoder = new TextEncoder();
-    const byteArray = encoder.encode(str);
-    return Array.from(byteArray);
-}
-
-
 function backtrack(Puzzle, emptyPuzzle, words) {
     if (words.length === 0) {
-        return emptyPuzzle;  // Return the completed puzzle instead of 'Error'
+        if (checkSlolutions(emptyPuzzle)){
+            solutions.push(emptyPuzzle)
+        }
+        
+        return
     }
     // Iterate over the Puzzle grid
     for (let i = 0; i < Puzzle.length; i++) {
         for (let j = 0; j < Puzzle[i].length; j++) {
-            if (Puzzle[i][j] == 49 || Puzzle[i][j] == 50) {
+            if (Puzzle[i][j] == '1' || Puzzle[i][j] == '2') {
 
                 // Deep copy the emptyPuzzle for vertical/horizontal placements
-                let coppyVertical = emptyPuzzle.map(arr => arr.slice());
-                let coppyHorizontal = emptyPuzzle.map(arr => arr.slice());
+                let coppyVertical = copy(emptyPuzzle);
+                let coppyHorizontal = copy(emptyPuzzle)
 
                 // Try placing the word vertically
                 if (writeVertical(coppyVertical, i, j, words[0]) !== 'Error') {
-                    let puzzleCopy = Puzzle.map(arr => arr.slice());  // Deep copy Puzzle
-                    puzzleCopy[i][j]--;  // Decrease constraint
-
-                    // Recurse with the updated puzzle and the remaining words
-                    const result = backtrack(puzzleCopy, coppyVertical, words.slice(1));
-                    if (result !== 'Error') {
-                        return result;
+                    let puzzleCopy = copy(Puzzle);  // Deep copy Puzzle
+                    if (puzzleCopy[i][j] == '2') {
+                        puzzleCopy[i][j] = '1'
+                    } else {
+                        puzzleCopy[i][j] = '0'
                     }
+                    // Recurse with the updated puzzle and the remaining words
+                    backtrack(puzzleCopy, coppyVertical, words.slice(1));
+
                 }
 
                 // Try placing the word horizontally
                 if (writeHorizantale(coppyHorizontal, i, j, words[0]) !== 'Error') {
-                    let puzzleCopy = Puzzle.map(arr => arr.slice());  // Deep copy Puzzle
-                    puzzleCopy[i][j]--;  // Decrease constraint
+                    let puzzleCopy = copy(Puzzle);  // Deep copy Puzzle
+                    if (puzzleCopy[i][j] == '2') {
+                        puzzleCopy[i][j] = '1'
+                    } else {
+                        puzzleCopy[i][j] = '0'
+                    }
 
                     // Recurse with the updated puzzle and the remaining words
-                    const result = backtrack(puzzleCopy, coppyHorizontal, words.slice(1));
-                    if (result !== 'Error') {
-                        return result;
-                    }
+                    backtrack(puzzleCopy, coppyHorizontal, words.slice(1));
                 }
             }
         }
     }
-
-    return 'Error';  // Return 'Error' if no solution is found
 }
-
+function copy(e) {
+    let a = []
+    for (let i = 0; i < e.length; i++) {
+        a.push(e[i].slice())
+    }
+    return a
+}
 
 function writeHorizantale(e, x, y, w) {
     if (y + w.length > e[x].length) {
         return 'Error'
     }
     for (let i = y; i < y + w.length; i++) {
-        if (e[x][i] == 50 || e[x][i] == 48 || e[x][i] == 49) {
+        if (e[x][i] == '1' || e[x][i] == '2' || e[x][i] == '0') {
             e[x][i] = w[i - y]
         } else if (e[x][i] != w[i - y]) {
             return 'Error'
@@ -123,7 +144,7 @@ function writeVertical(e, x, y, w) {
         return 'Error'
     }
     for (let i = x; i < x + w.length; i++) {
-        if (e[i][y] == 50 || e[i][y] == 48 || e[i][y] == 49) {
+        if (e[i][y] == '1' || e[i][y] == '2' || e[i][y] == '0') {
             e[i][y] = w[i - x]
         } else if (e[i][y] != w[i - x]) {
             return 'Error'
