@@ -1,154 +1,152 @@
-const puzzle = '2001\n0..0\n1000\n0..0'
-const words = ['casa', 'alan', 'ciao', 'anta']
-
-
-
-
+// Add puzzle and words after this line
+const puzzle = '2000\n0...\n0...\n0...'
+const words = ['abba', 'assa']
 let solutions = []
-crosswordSolver(puzzle, words)
-
-function crosswordSolver(ep, words) {
-    if (checker(ep, words)) {
-        console.log('Error')
+// main function
+function crosswordSolver(puzzle, words) {
+    if (!validInputs(puzzle, words)) {
+        console.log('Error: input is not valid!')
         return
     }
-    let emptyPuzzle = ep.split("\n")
-    for (let i = 0; i < emptyPuzzle.length; i++) {
-        emptyPuzzle[i] = emptyPuzzle[i].split('')
+    const puzzleGrid = puzzle.split("\n")
+    for (let i = 0; i < puzzleGrid.length; i++) {
+        puzzleGrid[i] = puzzleGrid[i].split('')
     }
-    backtrack(emptyPuzzle, emptyPuzzle, words)
-    if (solutions.length != 1) {
-        console.log('Error')
+    solvePuzzle(puzzleGrid, puzzleGrid, words)
+    if (solutions.length == 0) {
+        console.log('Error: no solutin found!')
+    } else if (solutions.length > 1) {
+        console.log('Error: multiple solutin found!')
     } else {
-        console.log(convertToString(solutions[0]))
+        console.log(gridToString(solutions[0]))
     }
-
 }
-function convertToString(o) {
-    for (let i = 0; i < o.length; i++) {
-        o[i] = [o[i].join('')]
+function gridToString(sol) {
+    for (let i = 0; i < sol.length; i++) {
+        sol[i] = [sol[i].join('')]
     }
-    return o.join('\n')
+    return sol.join('\n')
 }
-function checker(puzzle, words) {
+function validInputs(puzzle, words) {
+    // valid puzzle type and check if words or puzzle are empty
     if (puzzle.length == 0 || words.length == 0 || typeof (puzzle) != 'string') {
-        return true
+        return false
     }
+    // check type of words
     for (let i = 0; i < words.length; i++) {
         if (typeof (words[i]) != 'string') {
-            return true
+            return false
         }
     }
+    // check if puzzle containe a char that is not one of 0, 1, 2, \n or ., and count the number of 
+    // words in puzzle and compare it with the nuber of words
     let counter=0
     for (let i = 0; i < puzzle.length; i++) {
         if (puzzle[i] != '\n' && puzzle[i] != '0' && puzzle[i] != '1' && puzzle[i] != '2' && puzzle[i] != '.') {
-            return true
+            return false
         }
         if ( puzzle[i] != '.' && puzzle[i] != '\n') {
-            counter+=Number(puzzle[i])
+            counter += Number(puzzle[i])
         }
     }
-    if (counter!=words.length){
-        return true
+    if (counter != words.length){
+        return false
     }
+    // check if word repeated
     let wordsMap = new Map();
     for (let i = 0; i < words.length; i++) {
         if (wordsMap.get(words[i]) == undefined)  {
             wordsMap.set(words[i], true)
         } else {
-            return true 
+            return false 
         }
     }
-    return false
+    return true
 }
-function checkSlolutions(solutions){
+function checkSlolutions(solution){
     let regex=/[a-zA-Z\.]/
-    for (let i=0;i<solutions.length;i++){
-        for (let j=0;j<solutions[i].length;j++){
-            if  (!regex.test(solutions[i][j])){
+    for (let i=0;i<solution.length;i++){
+        for (let j=0;j<solution[i].length;j++){
+            if  (!regex.test(solution[i][j])){
                 return false
             }
         }
     }
     return true
 }
-function backtrack(Puzzle, emptyPuzzle, words) {
+function solvePuzzle(constPuzzle, resultePuzzle, words) {
     if (words.length === 0) {
-        if (checkSlolutions(emptyPuzzle)){
-            solutions.push(emptyPuzzle)
+        if (checkSlolutions(resultePuzzle)){
+            solutions.push(resultePuzzle)
         }
         
         return
     }
     // Iterate over the Puzzle grid
-    for (let i = 0; i < Puzzle.length; i++) {
-        for (let j = 0; j < Puzzle[i].length; j++) {
-            if (Puzzle[i][j] == '1' || Puzzle[i][j] == '2') {
-
-                // Deep copy the emptyPuzzle for vertical/horizontal placements
-                let coppyVertical = copy(emptyPuzzle);
-                let coppyHorizontal = copy(emptyPuzzle)
-
+    for (let i = 0; i < constPuzzle.length; i++) {
+        for (let j = 0; j < constPuzzle[i].length; j++) {
+            if (constPuzzle[i][j] == '1' || constPuzzle[i][j] == '2') {
+                // Deep copy the resultePuzzle for vertical/horizontal placements
+                let coppyVertical = copy(resultePuzzle);
+                let coppyHorizontal = copy(resultePuzzle)
                 // Try placing the word vertically
                 if (writeVertical(coppyVertical, i, j, words[0]) !== 'Error') {
-                    let puzzleCopy = copy(Puzzle);  // Deep copy Puzzle
+                    let puzzleCopy = copy(constPuzzle);  // Deep copy Puzzle
+               
+                    
                     if (puzzleCopy[i][j] == '2') {
                         puzzleCopy[i][j] = '1'
                     } else {
                         puzzleCopy[i][j] = '0'
                     }
-                    // Recurse with the updated puzzle and the remaining words
-                    backtrack(puzzleCopy, coppyVertical, words.slice(1));
-
+                    
+                    // Recurse with the updated puzzle and the remaining wordsrtical = copy(
+                    solvePuzzle(puzzleCopy, coppyVertical, words.slice(1));
                 }
-
                 // Try placing the word horizontally
                 if (writeHorizantale(coppyHorizontal, i, j, words[0]) !== 'Error') {
-                    let puzzleCopy = copy(Puzzle);  // Deep copy Puzzle
+                    let puzzleCopy = copy(constPuzzle);  // Deep copy Puzzle
                     if (puzzleCopy[i][j] == '2') {
                         puzzleCopy[i][j] = '1'
                     } else {
                         puzzleCopy[i][j] = '0'
                     }
-
                     // Recurse with the updated puzzle and the remaining words
-                    backtrack(puzzleCopy, coppyHorizontal, words.slice(1));
+                    solvePuzzle(puzzleCopy, coppyHorizontal, words.slice(1));
                 }
             }
         }
     }
 }
-function copy(e) {
-    let a = []
-    for (let i = 0; i < e.length; i++) {
-        a.push(e[i].slice())
+function copy(grid) {
+    let gridCopy = []
+    for (let i = 0; i < grid.length; i++) {
+        gridCopy.push(grid[i].slice())
     }
-    return a
+    return gridCopy
 }
-
-function writeHorizantale(e, x, y, w) {
-    if (y + w.length > e[x].length) {
+function writeHorizantale(puzzle, x, y, word) {
+    if (y + word.length > puzzle[x].length) {
         return 'Error'
     }
-    for (let i = y; i < y + w.length; i++) {
-        if (e[x][i] == '1' || e[x][i] == '2' || e[x][i] == '0') {
-            e[x][i] = w[i - y]
-        } else if (e[x][i] != w[i - y]) {
+    for (let i = y; i < y + word.length; i++) {
+        if (puzzle[x][i] == '1' || puzzle[x][i] == '2' || puzzle[x][i] == '0') {
+            puzzle[x][i] = word[i - y]
+        } else if (puzzle[x][i] != word[i - y]) {
             return 'Error'
         }
     }
-    return e
 }
-function writeVertical(e, x, y, w) {
-    if (x + w.length > e.length) {
+function writeVertical(puzzle, x, y, word) {
+    if (x + word.length > puzzle.length) {
         return 'Error'
     }
-    for (let i = x; i < x + w.length; i++) {
-        if (e[i][y] == '1' || e[i][y] == '2' || e[i][y] == '0') {
-            e[i][y] = w[i - x]
-        } else if (e[i][y] != w[i - x]) {
+    for (let i = x; i < x + word.length; i++) {
+        if (puzzle[i][y] == '1' || puzzle[i][y] == '2' || puzzle[i][y] == '0') {
+            puzzle[i][y] = word[i - x]
+        } else if (puzzle[i][y] != word[i - x]) {
             return 'Error'
         }
     }
-    return e
 }
+crosswordSolver(puzzle, words)
